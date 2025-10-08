@@ -3130,27 +3130,35 @@ function showCityOnMap() {
         }
 
         processMapData();
-        updateFilterCounts();
-        
-        if (userLocation) {
-          map.setView([userLocation.latitude, userLocation.longitude], 13);
-          addUserLocationMarker();
-        } else {
-          // Centruj mapę na mieście
-          map.setView([cityCoords.lat, cityCoords.lng], 12);
-          
-          if (elements.length > 0) {
-            const bounds = L.latLngBounds(elements.map(el => {
-              const lat = el.lat || (el.center && el.center.lat);
-              const lon = el.lon || (el.center && el.center.lon);
-              return [lat, lon];
-            }).filter(coord => coord[0] && coord[1]));
-            
-            if (bounds.isValid()) {
-              map.fitBounds(bounds, { padding: [20, 20] });
-            }
-          }
-        }
+updateFilterCounts();
+
+// flaga ustawiana z selectCityFromSearch() — jeśli true, wymusimy centrowanie na mieście
+const forceCity = (window._forceCenterToCity === true);
+
+if (userLocation && !forceCity) {
+  // mamy lokalizację użytkownika i nie wymuszono centrowania na mieście
+  map.setView([userLocation.latitude, userLocation.longitude], 13);
+  addUserLocationMarker();
+} else {
+  // centrujemy na wpisanym mieście (domyślnie)
+  map.setView([cityCoords.lat, cityCoords.lng], 12);
+
+  if (elements.length > 0) {
+    const coords = elements.map(el => {
+      const lat = el.lat || (el.center && el.center.lat);
+      const lon = el.lon || (el.center && el.center.lon);
+      return (lat && lon) ? [lat, lon] : null;
+    }).filter(Boolean);
+
+    if (coords.length) {
+      const bounds = L.latLngBounds(coords);
+      if (bounds.isValid()) map.fitBounds(bounds, { padding: [20, 20] });
+    }
+  }
+}
+
+// resetujemy flagę żeby kolejne wywołania działały normalnie
+window._forceCenterToCity = false;
       })
       .catch(error => {
         hideLoading();
@@ -4185,59 +4193,63 @@ if (hdr) hdr.classList.add('hidden');
       searchResults.style.display = 'block';
     }
 
-    function selectCityFromSearch(cityName, voivodeshipName) {
-      console.log(`🔍 Wybrano z wyszukiwarki: ${cityName} (${voivodeshipName})`);
-      
-      // Hide search results
-      document.getElementById('search-results').style.display = 'none';
-      document.getElementById('city-search').value = '';
-      
-      // Set the selected voivodeship and city
-      selectedVoivodeship = voivodeshipName;
-      selectedCity = cityName;
-      currentVoivodeship = voivodeshipName;
-      currentCity = cityName;
-      
-      // Update the UI to show the selected city
-      document.getElementById('voivodeship-section').classList.add('hidden');
-      document.getElementById('city-section').classList.add('hidden');
-      document.getElementById('selected-section').classList.remove('hidden');
-      document.getElementById('selected-title').textContent = `${cityName}, ${voivodeshipName}`;
-      
-      // Show filter and map cards
-      // removed old filter-card line;
-      document.getElementById('map-card').style.display = 'block';
-      
-      // Clear any previous data
-      userLocation = null;
-      elements = [];
-      clearAllMarkers();
-      
-      // Show success message
-      showToast(`Wybrano miasto: ${cityName}`, 'success');
-      
-      // Initialize map and load data
-      try {
-        if (!map) {
-          initializeMap();
-        } else {
-          // Reset map view to Poland if map exists
-          map.setView([52.0693, 19.4803], 6);
-        }
-        loadCityData();
-      } catch (error) {
-        console.error('Błąd podczas inicjalizacji:', error);
-        showToast('Wystąpił błąd podczas ładowania miasta', 'error');
-      }
-      
-      // Scroll to map
-      setTimeout(() => {
-        document.getElementById('map-card').scrollIntoView({ 
-          behavior: 'smooth', 
-          block: 'start' 
-        });
-      }, 300);
+ function selectCityFromSearch(cityName, voivodeshipName) {
+  console.log(`🔍 Wybrano z wyszukiwarki: ${cityName} (${voivodeshipName})`);
+  
+  // Hide search results
+  document.getElementById('search-results').style.display = 'none';
+  document.getElementById('city-search').value = '';
+  
+  // Set the selected voivodeship and city
+  selectedVoivodeship = voivodeshipName;
+  selectedCity = cityName;
+  currentVoivodeship = voivodeshipName;
+  currentCity = cityName;
+
+  // NEW: wymuś centrowanie mapy na wybrane miasto (ignoruj chwilowo lokalizację użytkownika)
+  window._forceCenterToCity = true;
+  
+  // Update the UI to show the selected city
+  document.getElementById('voivodeship-section').classList.add('hidden');
+  document.getElementById('city-section').classList.add('hidden');
+  document.getElementById('selected-section').classList.remove('hidden');
+  document.getElementById('selected-title').textContent = `${cityName}, ${voivodeshipName}`;
+  
+  // Show filter and map cards
+  // removed old filter-card line;
+  document.getElementById('map-card').style.display = 'block';
+  
+  // Clear any previous data
+  userLocation = null;
+  elements = [];
+  clearAllMarkers();
+  
+  // Show success message
+  showToast(`Wybrano miasto: ${cityName}`, 'success');
+  
+  // Initialize map and load data
+  try {
+    if (!map) {
+      initializeMap();
+    } else {
+      // Reset map view to Poland if map exists
+      map.setView([52.0693, 19.4803], 6);
     }
+    loadCityData();
+  } catch (error) {
+    console.error('Błąd podczas inicjalizacji:', error);
+    showToast('Wystąpił błąd podczas ładowania miasta', 'error');
+  }
+  
+  // Scroll to map
+  setTimeout(() => {
+    document.getElementById('map-card').scrollIntoView({ 
+      behavior: 'smooth', 
+      block: 'start' 
+    });
+  }, 300);
+}
+
 
     // Hide search results when clicking outside
     document.addEventListener('click', function(e) {
