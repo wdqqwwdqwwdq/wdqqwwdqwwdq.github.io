@@ -5604,5 +5604,29 @@ out center;
   });
 })();
 </script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const btn = document.getElementById('home-btn');
+  if (!btn) return; // nic do roboty, jeśli przycisk nie istnieje
+
+  // Rozpoznać stronę główną:
+  const path = window.location.pathname.replace(/\/+$/, ''); // usuń końcowe slash-e
+  const isHome = path === '' || path === '/' || path.toLowerCase().endsWith('/index.html');
+
+  if (isHome) {
+    // ukryj tylko na stronie głównej
+    // używamy klasy .hidden (masz ją już w CSS) — bezpieczniejsze niż bezpośredni style
+    btn.classList.add('hidden');
+
+    // jeśli wolisz wymusić display:none z ważnością:
+    // btn.style.setProperty('display', 'none', 'important');
+  } else {
+    // upewnij się, że przycisk jest widoczny na pozostałych stronach
+    btn.classList.remove('hidden');
+    // lub:
+    // btn.style.removeProperty('display');
+  }
+});
+</script>
 </body>
 </html>
