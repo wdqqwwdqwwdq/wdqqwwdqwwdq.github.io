@@ -2825,7 +2825,7 @@ function toggleFilterPanel() {
         }
         
         card.innerHTML = `
-          <img src="/${imageName}.png" alt="${voivodeship}" class="voivodeship-image" loading="lazy">
+          <img src="./${imageName}.png" alt="${voivodeship}" class="voivodeship-image" loading="lazy">
           <div class="voivodeship-content">
             <div class="voivodeship-name">${voivodeship}</div>
             <div class="voivodeship-cities">
@@ -4598,7 +4598,7 @@ document.addEventListener('click', function (e) {
   </script>
 <script>
 if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("/service-worker.js")
+  navigator.serviceWorker.register("./service-worker.js")
     .then(() => console.log("✅ Service Worker zarejestrowany!"))
     .catch(err => console.log("❌ Błąd Service Workera:", err));
 }
