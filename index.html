@@ -2933,12 +2933,18 @@ function getUserLocation() {
         if (home) home.style.display = 'none';
         if (voivodeships) voivodeships.style.display = 'none';
 
-        // 🔹 Pokaż mapę na pełny ekran
-        const mapContainer = document.getElementById('map');
-        if (mapContainer) {
-          mapContainer.style.display = 'block';
-          mapContainer.style.height = '100vh'; // pełna wysokość
-        }
+      // Pokaż mapę (użyj domyślnego rozmiaru z CSS, nie 100vh)
+const mapContainer = document.getElementById('map');
+if (mapContainer) {
+  mapContainer.style.display = 'block';
+  // usuń/lub nie nadpisuj wysokości — niech CSS (.map-container) rządzi:
+  mapContainer.style.height = ''; // albo: mapContainer.style.height = '70vh';
+  // jeśli mapa już istnieje, wymuś przeliczenie rozmiaru Leaflet
+  if (typeof map !== 'undefined' && map) {
+    // daj przeglądarce chwilę na layout, potem przelicz
+    setTimeout(() => { try { map.invalidateSize(); } catch(e) { console.warn(e); } }, 150);
+  }
+}
 
       } else {
         if (userMarker) {
