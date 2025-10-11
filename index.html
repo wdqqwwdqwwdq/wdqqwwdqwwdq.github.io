@@ -6,7 +6,7 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
   <title>JAMIASTO - Mapa: toalety, wodopoje, bankomaty, apteki, skateparki i place zabaw </title>
-  <link rel="manifest" href="./manifest.json">
+  <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#0d6efd">
 
   <style>
@@ -1194,6 +1194,19 @@
 }
 </style>
 
+
+<style>
+/* Smooth hide/show for the home button */
+#home-btn {
+  transition: opacity 220ms ease, transform 220ms ease;
+  will-change: opacity, transform;
+}
+#home-btn.fs-hidden {
+  opacity: 0 !important;
+  transform: translateY(-6px) scale(0.98);
+  pointer-events: none !important;
+}
+</style>
 </head>
 <body>
   <!-- Enhanced Header -->
@@ -1256,7 +1269,7 @@
 
   <!-- PRZYCISK STRONA GŁÓWNA (ukryty na starcie) -->
   <button id="home-btn" onclick="goHome()" 
-    style="padding: 0.4rem 0.8rem; font-size: 0.8rem; border:none; border-radius:6px; background:#d32f2f; color:white; cursor:pointer;">
+   style="padding: 0.4rem 0.7rem; font-size: 0.6rem; border:none; border-radius:6px; background:#d32f2f; color:white; cursor:pointer;">
     <i class="fas fa-home"></i> Strona główna
   </button>
 </div>
@@ -2933,7 +2946,7 @@ function getUserLocation() {
         if (home) home.style.display = 'none';
         if (voivodeships) voivodeships.style.display = 'none';
 
-      // Pokaż mapę (użyj domyślnego rozmiaru z CSS, nie 100vh)
+     // Pokaż mapę (użyj domyślnego rozmiaru z CSS, nie 100vh)
 const mapContainer = document.getElementById('map');
 if (mapContainer) {
   mapContainer.style.display = 'block';
@@ -3134,8 +3147,7 @@ function showCityOnMap() {
         } else {
           showToast(`✅ Znaleziono ${elements.length} punktów w okolicy ${currentCity}!`, 'success');
         }
-
-        processMapData();
+processMapData();
 updateFilterCounts();
 
 // flaga ustawiana z selectCityFromSearch() — jeśli true, wymusimy centrowanie na mieście
@@ -4199,7 +4211,7 @@ if (hdr) hdr.classList.add('hidden');
       searchResults.style.display = 'block';
     }
 
- function selectCityFromSearch(cityName, voivodeshipName) {
+   function selectCityFromSearch(cityName, voivodeshipName) {
   console.log(`🔍 Wybrano z wyszukiwarki: ${cityName} (${voivodeshipName})`);
   
   // Hide search results
@@ -4255,7 +4267,6 @@ if (hdr) hdr.classList.add('hidden');
     });
   }, 300);
 }
-
 
     // Hide search results when clicking outside
     document.addEventListener('click', function(e) {
@@ -4593,7 +4604,7 @@ document.addEventListener('click', function (e) {
   </script>
 <script>
 if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("./service-worker.js")
+  navigator.serviceWorker.register("/service-worker.js")
     .then(() => console.log("✅ Service Worker zarejestrowany!"))
     .catch(err => console.log("❌ Błąd Service Workera:", err));
 }
@@ -4671,12 +4682,29 @@ function openFilterPanel() {
     window.location.href = window.location.pathname;
   }
 
-  // pokazywanie/ukrywanie przycisku
+  // Unified show/hide for #home-btn using classes to avoid conflicts (fs-hidden = animation, hidden = display:none)
   function showHomeButton() {
-    document.getElementById("home-btn").style.display = "inline-flex";
+    var btn = document.getElementById('home-btn');
+    if (!btn) return;
+    btn.classList.remove('hidden');
+    // let animation class be removed so it becomes visible
+    setTimeout(function(){ btn.classList.remove('fs-hidden'); }, 10);
+    // remove any inline display set previously
+    try { btn.style.removeProperty('display'); } catch(e){}
   }
-  function hideHomeButton() {
-    document.getElementById("home-btn").style.display = "none";
+
+  function hideHomeButton(animated) {
+    animated = (typeof animated === 'undefined') ? true : !!animated;
+    var btn = document.getElementById('home-btn');
+    if (!btn) return;
+    if (animated) {
+      btn.classList.add('fs-hidden');
+      // after animation duration, remove from layout
+      setTimeout(function(){ btn.classList.add('hidden'); }, 260);
+    } else {
+      btn.classList.add('hidden');
+      btn.classList.remove('fs-hidden');
+    }
   }
 </script>
 <script>
@@ -5621,6 +5649,115 @@ out center;
     });
   });
 })();
-</script>                                                                      
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const btn = document.getElementById('home-btn');
+  if (!btn) return; // nic do roboty, jeśli przycisk nie istnieje
+
+  // Rozpoznać stronę główną:
+  const path = window.location.pathname.replace(/\/+$/, ''); // usuń końcowe slash-e
+  const isHome = path === '' || path === '/' || path.toLowerCase().endsWith('/index.html');
+
+  if (isHome) {
+    // ukryj tylko na stronie głównej
+    // używamy klasy .hidden (masz ją już w CSS) — bezpieczniejsze niż bezpośredni style
+    btn.classList.add('hidden');
+
+    // jeśli wolisz wymusić display:none z ważnością:
+    // btn.style.setProperty('display', 'none', 'important');
+  } else {
+    // upewnij się, że przycisk jest widoczny na pozostałych stronach
+    btn.classList.remove('hidden');
+    // lub:
+    // btn.style.removeProperty('display');
+  }
+});
+</script>
+
+
+<script>
+(function(){
+  function findHomeButton() {
+    // prefer explicit id
+    var btn = document.querySelector('#home-btn');
+    if (btn) return btn;
+    var buttons = Array.from(document.querySelectorAll('button, a, div[role="button"]'));
+    for (var b of buttons) {
+      try {
+        if (b.textContent && b.textContent.trim().toLowerCase().indexOf('strona główna') !== -1) {
+          // set id for future reference
+          b.id = 'home-btn';
+          return b;
+        }
+      } catch(e) { continue; }
+    }
+    return null;
+  }
+
+  function findFirstScreenElement() {
+    // check common hero/header selectors
+    var candidates = [
+      'section',
+      'header',
+      '.hero',
+      '.first-screen',
+      '.hero-section',
+      '#hero'
+    ];
+    for (var sel of candidates) {
+      var el = document.querySelector(sel);
+      if (el && el.offsetHeight > 40) return el;
+    }
+    // fallback to the top-most visible child of body
+    var child = document.body.firstElementChild;
+    if (child) return child;
+    return document.documentElement;
+  }
+
+  function setupObserver(homeBtn, firstEl) {
+    if (!homeBtn || !firstEl) return;
+    // Ensure it's visible by default if not on first screen
+    // Create observer
+    var observer = new IntersectionObserver(function(entries){
+      entries.forEach(function(entry){
+        if (entry.isIntersecting && entry.intersectionRatio > 0.45) {
+          hideHomeButton(true);
+        } else {
+          showHomeButton();
+        }
+      });
+    }, { root: null, threshold: [0, 0.15, 0.45, 0.7, 1] });
+
+    observer.observe(firstEl);
+
+    // Also run a quick check for initial load
+    // If firstEl is taller than viewport, check bounding rect.
+    var rect = firstEl.getBoundingClientRect();
+    var visible = !(rect.bottom <= 0 || rect.top >= (window.innerHeight || document.documentElement.clientHeight));
+    if (visible) {
+      hideHomeButton(true);
+    } else {
+      showHomeButton();
+    }
+
+    // In case layout changes (e.g. images load), re-evaluate
+    window.addEventListener('resize', function(){ observer.unobserve(firstEl); observer.observe(firstEl); });
+  }
+
+  // Run after DOM ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function(){ 
+      var btn = findHomeButton();
+      var first = findFirstScreenElement();
+      setupObserver(btn, first);
+    });
+  } else {
+    var btn = findHomeButton();
+    var first = findFirstScreenElement();
+    setupObserver(btn, first);
+  }
+})();
+</script>
 </body>
-            </html>
+</html>
